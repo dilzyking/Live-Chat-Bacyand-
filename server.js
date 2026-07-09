@@ -8,15 +8,7 @@ const { Server } = require("socket.io");
 const admin = require("firebase-admin");
 
 /* =========================
-   FIREBASE
-========================= */
-admin.initializeApp({
-  credential: admin.credential.cert(require("/etc/secrets/firebaseKey.json")),
-  storageBucket: "photo-video-20596.appspot.com"
-});
 
-const db = admin.firestore();
-const bucket = admin.storage().bucket();
 
 /* =========================
    APP + CORS (FIXED)
