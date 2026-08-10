@@ -2,37 +2,7 @@
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
-const multer = require("multer");
 const { Server } = require("socket.io");
-const admin = require("firebase-admin");
-
-/* =========================
-   FIREBASE - Only for Media Storage
-========================= */
-let firebaseKey;
-try {
-  if (process.env.FIREBASE_KEY) {
-    firebaseKey = JSON.parse(process.env.FIREBASE_KEY);
-  } else {
-    firebaseKey = require("/etc/secrets/firebaseKey.json");
-  }
-} catch (error) {
-  console.error("Firebase key not found");
-  process.exit(1);
-}
-
-admin.initializeApp({
-  credential: admin.credential.cert(firebaseKey),
-  storageBucket: "photo-video-20596.appspot.com"
-});
-
-const bucket = admin.storage().bucket();
-
-/* =========================
-   IN-MEMORY CHAT STORAGE (No Firestore)
-========================= */
-const chatMessages = []; // Array to store messages in memory (max 100)
-const MAX_MESSAGES = 100;
 
 /* =========================
    APP + CORS
@@ -57,26 +27,50 @@ const io = new Server(server, {
 });
 
 /* =========================
-   UPLOAD SETUP
+   IN-MEMORY CHAT STORAGE
 ========================= */
-const upload = multer({
-  storage: multer.memoryStorage()
-});
+const chatMessages = []; // Store messages in memory (max 100)
+const MAX_MESSAGES = 100;
+const users = new Map(); // Store connected users: socketId -> username
 
 /* =========================
-   SOCKET CHAT - Real-time (No DB)
+   SOCKET CHAT - Real-time
 ========================= */
 io.on("connection", (socket) => {
-  console.log("New client connected:", socket.id);
+  console.log("🟢 New client connected:", socket.id);
 
   // Send last 100 messages to new user
   socket.emit("chat_history", chatMessages);
 
+  // Send current user count
+  io.emit("user_count", users.size);
+
+  // User joins with username
+  socket.on("user_join", (username) => {
+    users.set(socket.id, username);
+    console.log(`👤 ${username} joined`);
+    
+    // Broadcast user joined
+    io.emit("user_joined", {
+      username: username,
+      userCount: users.size
+    });
+
+    // Update user count for all
+    io.emit("user_count", users.size);
+  });
+
+  // Handle text messages
   socket.on("send_message", (data) => {
+    const username = users.get(socket.id) || "Anonymous";
     const msg = { 
-      ...data, 
       id: Date.now().toString(),
-      createdAt: Date.now() 
+      username: username,
+      text: data.text || "",
+      image: data.image || null,
+      video: data.video || null,
+      createdAt: Date.now(),
+      type: data.type || "text" // text, image, video
     };
 
     // Store in memory (keep last 100)
@@ -85,73 +79,64 @@ io.on("connection", (socket) => {
       chatMessages.shift(); // Remove oldest
     }
 
-    // Broadcast to ALL connected clients (including sender)
+    // Broadcast to ALL connected clients
     io.emit("receive_message", msg);
   });
 
+  // Handle typing indicator
+  socket.on("typing", (isTyping) => {
+    const username = users.get(socket.id);
+    if (username) {
+      socket.broadcast.emit("user_typing", {
+        username: username,
+        isTyping: isTyping
+      });
+    }
+  });
+
+  // Handle disconnect
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
+    const username = users.get(socket.id);
+    users.delete(socket.id);
+    
+    if (username) {
+      console.log(`🔴 ${username} disconnected`);
+      io.emit("user_left", {
+        username: username,
+        userCount: users.size
+      });
+    }
+    
+    io.emit("user_count", users.size);
   });
 });
 
 /* =========================
-   IMAGE UPLOAD (5MB)
-========================= */
-app.post("/upload/image", upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "No image" });
-    if (req.file.size > 5 * 1024 * 1024)
-      return res.status(400).json({ error: "Image too large" });
-
-    const name = `images/${Date.now()}_${req.file.originalname}`;
-    await bucket.file(name).save(req.file.buffer, {
-      metadata: { contentType: req.file.mimetype }
-    });
-
-    const url = `https://storage.googleapis.com/${bucket.name}/${name}`;
-    res.json({ success: true, url });
-
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Image upload failed" });
-  }
-});
-
-/* =========================
-   VIDEO UPLOAD (30MB)
-========================= */
-app.post("/upload/video", upload.single("video"), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "No video" });
-    if (req.file.size > 30 * 1024 * 1024)
-      return res.status(400).json({ error: "Video too large" });
-
-    const name = `videos/${Date.now()}_${req.file.originalname}`;
-    await bucket.file(name).save(req.file.buffer, {
-      metadata: { contentType: req.file.mimetype }
-    });
-
-    const url = `https://storage.googleapis.com/${bucket.name}/${name}`;
-    res.json({ success: true, url });
-
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Video upload failed" });
-  }
-});
-
-/* =========================
-   GET CHAT HISTORY (From Memory)
+   GET CHAT HISTORY
 ========================= */
 app.get("/messages", (req, res) => {
   res.json(chatMessages);
 });
 
 /* =========================
+   GET USER COUNT
+========================= */
+app.get("/users", (req, res) => {
+  res.json({ 
+    count: users.size,
+    users: Array.from(users.values())
+  });
+});
+
+/* =========================
    HEALTH CHECK
 ========================= */
 app.get("/", (req, res) => {
-  res.send("OK");
+  res.json({ 
+    status: "OK", 
+    messages: chatMessages.length,
+    users: users.size 
+  });
 });
 
 /* =========================
@@ -159,6 +144,7 @@ app.get("/", (req, res) => {
 ========================= */
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
-  console.log("Server running on port", PORT);
-  console.log("Chat messages stored in memory (max 100)");
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📝 Messages in memory: ${chatMessages.length}/${MAX_MESSAGES}`);
+  console.log(`👥 Users online: ${users.size}`);
 });
