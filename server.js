@@ -1,286 +1,143 @@
 // server.js
-const express = require("express");
-const http = require("http");
-const cors = require("cors");
-const { Server } = require("socket.io");
+// Real-time chat server. No database, no Firebase — everything lives in
+// process memory and disappears when the server restarts (by design).
 
-/* =========================
-   APP SETUP
-========================= */
+const express = require('express');
+const path = require('path');
+const http = require('http');
+const { WebSocketServer } = require('ws');
+const crypto = require('crypto');
+
+const PORT = process.env.PORT || 3000;
+const HISTORY_LIMIT = 100;       // messages kept per room, in memory only
+const MAX_MSG_LEN = 2000;
+const IDLE_TIMEOUT_MS = 35000;   // ping/pong dead-connection sweep
+
 const app = express();
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"]
-}));
-app.options("*", cors());
-app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/healthz', (_req, res) => res.status(200).send('ok')); // for Render health checks
 
 const server = http.createServer(app);
+const wss = new WebSocketServer({ server, path: '/ws' });
 
-/* =========================
-   SOCKET.IO WITH CORS
-========================= */
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  },
-  transports: ['websocket', 'polling']
-});
+/**
+ * rooms: Map<roomName, {
+ *   clients: Map<ws, { id, name }>,
+ *   history: Array<{ id, name, text, ts }>
+ * }>
+ * Nothing here ever touches disk.
+ */
+const rooms = new Map();
 
-/* =========================
-   IN-MEMORY STORAGE
-========================= */
-const chatMessages = [];      // Store messages
-const MAX_MESSAGES = 100;      // Max messages in memory
-const users = new Map();       // socketId -> username
-const typingUsers = new Set(); // Track who is typing
-
-/* =========================
-   SOCKET EVENTS
-========================= */
-io.on("connection", (socket) => {
-  console.log(`🟢 Client connected: ${socket.id}`);
-  console.log(`👥 Total users: ${users.size}`);
-
-  // ============================================
-  // 1. SEND CHAT HISTORY TO NEW USER
-  // ============================================
-  socket.emit("chat_history", chatMessages);
-  
-  // Send current user list to new user
-  const userList = Array.from(users.values());
-  socket.emit("user_list", userList);
-  
-  // Send current user count
-  io.emit("user_count", users.size);
-
-  // ============================================
-  // 2. USER JOINS
-  // ============================================
-  socket.on("user_join", (username) => {
-    // Store username
-    users.set(socket.id, username);
-    console.log(`👤 ${username} joined (${socket.id})`);
-    
-    // Broadcast to everyone except sender
-    socket.broadcast.emit("user_joined", {
-      username: username,
-      userCount: users.size,
-      users: Array.from(users.values())
-    });
-
-    // Send updated user list to everyone
-    io.emit("user_list", Array.from(users.values()));
-    io.emit("user_count", users.size);
-    
-    // Send welcome message to the new user
-    socket.emit("welcome", {
-      message: `Welcome ${username}!`,
-      userCount: users.size
-    });
-  });
-
-  // ============================================
-  // 3. SEND MESSAGE
-  // ============================================
-  socket.on("send_message", (data) => {
-    const username = users.get(socket.id) || "Anonymous";
-    
-    // Create message object
-    const msg = { 
-      id: `${Date.now()}_${socket.id.substring(0, 4)}`,
-      username: username,
-      text: data.text || "",
-      image: data.image || null,
-      video: data.video || null,
-      createdAt: Date.now(),
-      type: data.type || "text", // text, image, video
-      socketId: socket.id
-    };
-
-    // Store in memory
-    chatMessages.push(msg);
-    if (chatMessages.length > MAX_MESSAGES) {
-      chatMessages.shift(); // Remove oldest
-    }
-
-    // Broadcast to ALL connected clients
-    io.emit("receive_message", msg);
-    
-    // Log
-    console.log(`💬 ${username}: ${data.text || data.type}`);
-  });
-
-  // ============================================
-  // 4. TYPING INDICATOR
-  // ============================================
-  socket.on("typing", (isTyping) => {
-    const username = users.get(socket.id);
-    if (!username) return;
-
-    if (isTyping) {
-      typingUsers.add(socket.id);
-    } else {
-      typingUsers.delete(socket.id);
-    }
-
-    // Broadcast typing status to everyone except sender
-    socket.broadcast.emit("user_typing", {
-      username: username,
-      isTyping: isTyping,
-      users: Array.from(typingUsers).map(id => users.get(id)).filter(Boolean)
-    });
-  });
-
-  // ============================================
-  // 5. PRIVATE MESSAGE
-  // ============================================
-  socket.on("private_message", (data) => {
-    const sender = users.get(socket.id);
-    const recipient = data.recipient;
-    
-    // Find recipient socket
-    let recipientSocketId = null;
-    for (const [id, name] of users) {
-      if (name === recipient) {
-        recipientSocketId = id;
-        break;
-      }
-    }
-
-    if (recipientSocketId) {
-      const msg = {
-        id: `${Date.now()}_${socket.id.substring(0, 4)}`,
-        from: sender,
-        to: recipient,
-        text: data.text,
-        createdAt: Date.now(),
-        isPrivate: true
-      };
-
-      // Send to recipient
-      io.to(recipientSocketId).emit("private_message", msg);
-      // Send confirmation to sender
-      socket.emit("private_message_sent", msg);
-      
-      console.log(`🔒 Private message from ${sender} to ${recipient}`);
-    } else {
-      socket.emit("error", { message: "User not found" });
-    }
-  });
-
-  // ============================================
-  // 6. DISCONNECT
-  // ============================================
-  socket.on("disconnect", () => {
-    const username = users.get(socket.id);
-    users.delete(socket.id);
-    typingUsers.delete(socket.id);
-    
-    if (username) {
-      console.log(`🔴 ${username} disconnected (${socket.id})`);
-      
-      // Broadcast user left
-      io.emit("user_left", {
-        username: username,
-        userCount: users.size,
-        users: Array.from(users.values())
-      });
-
-      // Update user list and count
-      io.emit("user_list", Array.from(users.values()));
-      io.emit("user_count", users.size);
-    } else {
-      console.log(`🔴 Client disconnected: ${socket.id}`);
-    }
-  });
-
-  // ============================================
-  // 7. ERROR HANDLING
-  // ============================================
-  socket.on("error", (error) => {
-    console.error(`❌ Socket error (${socket.id}):`, error);
-    socket.emit("error", { message: "Socket error occurred" });
-  });
-
-  // ============================================
-  // 8. PING/PONG (Keep Alive)
-  // ============================================
-  socket.on("ping", () => {
-    socket.emit("pong");
-  });
-});
-
-/* =========================
-   API ROUTES
-========================= */
-
-// Get all messages
-app.get("/messages", (req, res) => {
-  res.json({
-    count: chatMessages.length,
-    messages: chatMessages
-  });
-});
-
-// Get online users
-app.get("/users", (req, res) => {
-  res.json({ 
-    count: users.size,
-    users: Array.from(users.values())
-  });
-});
-
-// Get server stats
-app.get("/stats", (req, res) => {
-  res.json({
-    status: "online",
-    totalMessages: chatMessages.length,
-    maxMessages: MAX_MESSAGES,
-    onlineUsers: users.size,
-    typingUsers: typingUsers.size,
-    uptime: process.uptime(),
-    timestamp: Date.now()
-  });
-});
-
-// Health check
-app.get("/", (req, res) => {
-  res.json({
-    status: "OK",
-    message: "💬 Live Chat Server is running",
-    version: "1.0.0",
-    endpoints: {
-      websocket: "wss://live-chat-matchdekho.onrender.com",
-      messages: "GET /messages",
-      users: "GET /users",
-      stats: "GET /stats"
-    },
-    docs: "https://github.com/yourusername/chat-app"
-  });
-});
-
-// Clear messages (admin only)
-app.post("/admin/clear", (req, res) => {
-  const { key } = req.body;
-  if (key === "admin123") {
-    chatMessages.length = 0;
-    res.json({ success: true, message: "Messages cleared" });
-  } else {
-    res.status(401).json({ error: "Unauthorized" });
+function getRoom(name) {
+  if (!rooms.has(name)) {
+    rooms.set(name, { clients: new Map(), history: [] });
   }
+  return rooms.get(name);
+}
+
+function sanitize(str, max) {
+  return String(str || '').slice(0, max).replace(/[<>]/g, (c) => (c === '<' ? '&lt;' : '&gt;'));
+}
+
+function broadcast(roomName, payload, exceptWs = null) {
+  const room = rooms.get(roomName);
+  if (!room) return;
+  const data = JSON.stringify(payload);
+  for (const client of room.clients.keys()) {
+    if (client !== exceptWs && client.readyState === client.OPEN) {
+      client.send(data);
+    }
+  }
+}
+
+function userList(roomName) {
+  const room = rooms.get(roomName);
+  if (!room) return [];
+  return [...room.clients.values()].map((u) => u.name);
+}
+
+function cleanupEmptyRoom(roomName) {
+  const room = rooms.get(roomName);
+  if (room && room.clients.size === 0) {
+    rooms.delete(roomName); // history for an empty room is dropped too
+  }
+}
+
+wss.on('connection', (ws, req) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const roomName = sanitize(url.searchParams.get('room') || 'general', 40) || 'general';
+  const requestedName = sanitize(url.searchParams.get('name') || 'Guest', 24) || 'Guest';
+
+  const room = getRoom(roomName);
+  const id = crypto.randomUUID();
+
+  // De-dupe display names within a room
+  let name = requestedName;
+  const taken = new Set(userList(roomName));
+  let n = 2;
+  while (taken.has(name)) {
+    name = `${requestedName}(${n++})`;
+  }
+
+  room.clients.set(ws, { id, name });
+  ws.isAlive = true;
+  ws.roomName = roomName;
+
+  ws.on('pong', () => { ws.isAlive = true; });
+
+  // Send the new client its identity + recent history + who's online
+  ws.send(JSON.stringify({ type: 'welcome', name, room: roomName, history: room.history }));
+  ws.send(JSON.stringify({ type: 'presence', users: userList(roomName) }));
+
+  // Tell everyone else someone joined
+  broadcast(roomName, { type: 'system', text: `${name} joined`, ts: Date.now() }, ws);
+  broadcast(roomName, { type: 'presence', users: userList(roomName) });
+
+  ws.on('message', (raw) => {
+    let msg;
+    try {
+      msg = JSON.parse(raw);
+    } catch {
+      return; // ignore malformed frames
+    }
+
+    if (msg.type === 'message') {
+      const text = sanitize(msg.text, MAX_MSG_LEN).trim();
+      if (!text) return;
+      const entry = { id: crypto.randomUUID(), name, text, ts: Date.now() };
+      room.history.push(entry);
+      if (room.history.length > HISTORY_LIMIT) room.history.shift();
+      broadcast(roomName, { type: 'message', ...entry });
+    } else if (msg.type === 'typing') {
+      broadcast(roomName, { type: 'typing', name }, ws);
+    }
+  });
+
+  ws.on('close', () => {
+    room.clients.delete(ws);
+    broadcast(roomName, { type: 'system', text: `${name} left`, ts: Date.now() });
+    broadcast(roomName, { type: 'presence', users: userList(roomName) });
+    cleanupEmptyRoom(roomName);
+  });
+
+  ws.on('error', () => ws.terminate());
 });
 
-/* =========================
-   START SERVER
-========================= */
-const PORT = process.env.PORT || 10000;
+// Drop dead connections (e.g. laptop closed without a clean close frame)
+const sweeper = setInterval(() => {
+  for (const ws of wss.clients) {
+    if (ws.isAlive === false) {
+      ws.terminate();
+      continue;
+    }
+    ws.isAlive = false;
+    ws.ping();
+  }
+}, IDLE_TIMEOUT_MS);
+
+wss.on('close', () => clearInterval(sweeper));
+
 server.listen(PORT, () => {
-  console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`📍 URL: http://localhost:${PORT}`);
-  console.log(`📝 Messages in memory: ${chatMessages.length}/${MAX_MESSAGES}`);
-  console.log(`👥 Users online: ${users.size}`);
-  console.log(`📡 WebSocket: ws://localhost:${PORT}\n`);
+  console.log(`Chat server listening on :${PORT}`);
 });
