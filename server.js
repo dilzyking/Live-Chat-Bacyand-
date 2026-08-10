@@ -1,5 +1,4 @@
 // server.js
-
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
@@ -8,21 +7,37 @@ const { Server } = require("socket.io");
 const admin = require("firebase-admin");
 
 /* =========================
-   FIREBASE
+   FIREBASE - Only for Media Storage
 ========================= */
+let firebaseKey;
+try {
+  if (process.env.FIREBASE_KEY) {
+    firebaseKey = JSON.parse(process.env.FIREBASE_KEY);
+  } else {
+    firebaseKey = require("/etc/secrets/firebaseKey.json");
+  }
+} catch (error) {
+  console.error("Firebase key not found");
+  process.exit(1);
+}
+
 admin.initializeApp({
-  credential: admin.credential.cert(require("/etc/secrets/firebaseKey.json")),
+  credential: admin.credential.cert(firebaseKey),
   storageBucket: "photo-video-20596.appspot.com"
 });
 
-const db = admin.firestore();
 const bucket = admin.storage().bucket();
 
 /* =========================
-   APP + CORS (FIXED)
+   IN-MEMORY CHAT STORAGE (No Firestore)
+========================= */
+const chatMessages = []; // Array to store messages in memory (max 100)
+const MAX_MESSAGES = 100;
+
+/* =========================
+   APP + CORS
 ========================= */
 const app = express();
-
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "OPTIONS"],
@@ -49,19 +64,33 @@ const upload = multer({
 });
 
 /* =========================
-   SOCKET CHAT
+   SOCKET CHAT - Real-time (No DB)
 ========================= */
 io.on("connection", (socket) => {
-  socket.on("send_message", async (data) => {
-    const msg = { ...data, createdAt: Date.now() };
+  console.log("New client connected:", socket.id);
 
-    try {
-      await db.collection("messages").add(msg);
-    } catch (e) {
-      console.error("DB error:", e);
+  // Send last 100 messages to new user
+  socket.emit("chat_history", chatMessages);
+
+  socket.on("send_message", (data) => {
+    const msg = { 
+      ...data, 
+      id: Date.now().toString(),
+      createdAt: Date.now() 
+    };
+
+    // Store in memory (keep last 100)
+    chatMessages.push(msg);
+    if (chatMessages.length > MAX_MESSAGES) {
+      chatMessages.shift(); // Remove oldest
     }
 
+    // Broadcast to ALL connected clients (including sender)
     io.emit("receive_message", msg);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
   });
 });
 
@@ -112,16 +141,10 @@ app.post("/upload/video", upload.single("video"), async (req, res) => {
 });
 
 /* =========================
-   GET MESSAGES
+   GET CHAT HISTORY (From Memory)
 ========================= */
-app.get("/messages", async (req, res) => {
-  const snap = await db
-    .collection("messages")
-    .orderBy("createdAt", "asc")
-    .limit(100)
-    .get();
-
-  res.json(snap.docs.map(d => d.data()));
+app.get("/messages", (req, res) => {
+  res.json(chatMessages);
 });
 
 /* =========================
@@ -132,9 +155,10 @@ app.get("/", (req, res) => {
 });
 
 /* =========================
-   START SERVER (RENDER)
+   START SERVER
 ========================= */
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
   console.log("Server running on port", PORT);
+  console.log("Chat messages stored in memory (max 100)");
 });
