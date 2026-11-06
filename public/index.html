@@ -2,447 +2,412 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wire · general</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#101620" />
+  <title>MATCHDEKHO Live Chat</title>
+
   <style>
+    @font-face {
+      font-family: "Outfit";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+      src: url("https://allrounderlive.com/font.woff2") format("woff2");
+    }
     :root {
-      --mist: #EEF0F9;
-      --paper: #FFFFFF;
-      --ink: #181B3A;
-      --ink-soft: #5E6385;
-      --line: #DADDF0;
-      --violet: #5B3DF5;
-      --violet-deep: #3F25C9;
-      --violet-tint: #E7E2FF;
-      --coral: #FF6B57;
-      --ok: #1FA67A;
-      --display: 'Bricolage Grotesque', 'Segoe UI', sans-serif;
-      --body: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+      --font: "Outfit", "Inter", "Segoe UI", system-ui, sans-serif;
+      --bg: #101620;
+      --bg-deep: #0c0f15;
+      --surface: #151b26;
+      --stroke: #252c39;
+      --text: #f4f5f8;
+      --muted: #9299a8;
+      --accent: #ff6412;
+      --accent-hi: #ff7a2e;
+      --accent-soft: rgba(255,100,18,.12);
+      --green: #25d366;
+      --red: #f34b57;
+      --out: cubic-bezier(.22,1,.36,1);
     }
     * { box-sizing: border-box; margin: 0; }
     html, body { height: 100%; }
     body {
-      background: var(--mist);
-      color: var(--ink);
-      font-family: var(--body);
-      font-size: 15px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
       line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
     }
     button, input { font: inherit; color: inherit; }
-    button { cursor: pointer; border: 0; background: none; }
-    :focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+    button { cursor: pointer; border: 0; background: none; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
     /* ───────── login ───────── */
     #login {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 1.1fr 1fr;
-    }
-    .login-art {
-      background: var(--violet);
-      color: #fff;
-      position: relative;
-      overflow: hidden;
-      padding: 40px 48px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-    }
-    .login-art .word {
-      font-family: var(--display);
-      font-weight: 800;
-      font-size: clamp(120px, 22vw, 300px);
-      line-height: .8;
-      letter-spacing: -0.05em;
-      margin-left: -0.04em;
-      margin-bottom: -0.06em;
-    }
-    .login-art p {
-      max-width: 30ch;
-      font-size: 18px;
-      font-weight: 500;
-      margin-bottom: 28px;
-      color: #E3DDFF;
-    }
-    .login-art .blob {
-      position: absolute;
-      right: -90px; top: -90px;
-      width: 300px; height: 300px;
-      border-radius: 50%;
-      background: var(--coral);
-    }
-    .login-form {
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 40px 28px;
+      padding: 16px;
+      overflow-y: auto;
+      background: radial-gradient(ellipse at 50% 0%, rgba(78,131,191,.10), transparent 70%), var(--bg);
     }
-    .login-form form { width: min(380px, 100%); }
-    .login-form h1 {
-      font-family: var(--display);
-      font-size: 34px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+    .login-card {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      max-width: 400px;
+      padding: 30px 26px 24px;
+      border: 1px solid #354151;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #1b2430 0%, #111620 55%, #0d1119 100%);
+      box-shadow: 0 24px 70px rgba(0,0,0,.55);
+      text-align: center;
+    }
+    .login-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #ff6412, #ef9d37 30%, #28d369 75%, #128c7e);
+    }
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
+      color: #cfd4de;
+      margin-bottom: 14px;
+    }
+    .live-badge i {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(255,100,18,.12);
+    }
+    .login-card h1 {
+      font-size: clamp(24px, 6vw, 30px);
+      font-weight: 800;
+      letter-spacing: -.9px;
+      line-height: 1.12;
       margin-bottom: 8px;
     }
-    .login-form .sub { color: var(--ink-soft); margin-bottom: 26px; }
-    .login-form label { display: block; font-weight: 600; margin-bottom: 8px; }
-    .login-form input {
+    .login-card .sub { color: #a3acb9; font-size: 13px; line-height: 1.6; margin-bottom: 22px; }
+    .field { text-align: left; }
+    .field label { display: block; font-size: 12px; font-weight: 700; color: #c6cdd6; margin-bottom: 7px; }
+    .field input {
       width: 100%;
-      background: var(--paper);
-      border: 2px solid var(--line);
-      border-radius: 12px;
+      background: #0c111a;
+      border: 1px solid #2f3a4b;
+      border-radius: 8px;
       padding: 13px 14px;
       outline: none;
-      transition: border-color .15s;
+      transition: border-color .2s, box-shadow .2s;
     }
-    .login-form input:focus { border-color: var(--violet); }
-    .login-form input.bad { border-color: var(--coral); }
-    .field-error { color: #C4301C; font-size: 13px; min-height: 20px; margin-top: 6px; }
-    .btn-primary {
+    .field input::placeholder { color: #6c7686; }
+    .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,100,18,.14); }
+    .field input.bad { border-color: var(--red); }
+    .field-error { min-height: 20px; margin-top: 6px; text-align: left; color: #ff7a85; font-size: 12px; }
+    .btn-join {
       width: 100%;
-      margin-top: 10px;
-      padding: 14px;
-      background: var(--violet);
+      min-height: 46px;
+      margin-top: 6px;
+      border-radius: 8px;
+      background: var(--accent);
       color: #fff;
-      font-weight: 600;
-      border-radius: 12px;
-      transition: background .15s, transform .1s;
+      font-weight: 800;
+      font-size: 14px;
+      border: 1px solid var(--accent);
+      box-shadow: 0 8px 22px -12px rgba(255,100,18,.9);
+      transition: background .2s, transform .15s;
     }
-    .btn-primary:hover { background: var(--violet-deep); }
-    .btn-primary:active { transform: scale(.985); }
-    .login-form .note { margin-top: 18px; font-size: 13px; color: var(--ink-soft); }
+    .btn-join:hover { background: var(--accent-hi); }
+    .btn-join:active { transform: scale(.985); }
+    .login-note { margin-top: 14px; font-size: 11px; color: #717d8d; }
 
-    /* ───────── chat shell ───────── */
+    /* ───────── chat ───────── */
     #chat {
       display: none;
-      height: 100vh;
-      height: 100dvh;
-      grid-template-columns: 260px 1fr;
-    }
-    aside {
-      background: var(--ink);
-      color: #D9DCF5;
-      padding: 24px 18px;
-      display: flex;
+      position: relative;
+      height: 100%;
       flex-direction: column;
-      gap: 22px;
-      overflow-y: auto;
     }
-    .brand {
-      font-family: var(--display);
-      font-weight: 800;
-      font-size: 30px;
-      letter-spacing: -0.04em;
-      color: #fff;
+    #chat.on { display: flex; }
+
+    /* floating status pill (replaces a header) */
+    .pill-wrap {
+      position: absolute;
+      top: 10px; right: 12px;
+      z-index: 10;
     }
-    .room-tag {
-      display: inline-block;
-      background: rgba(255,255,255,.1);
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-weight: 600;
-      color: #fff;
-      align-self: flex-start;
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid #2f3846;
+      border-radius: 20px;
+      background: rgba(12,15,21,.88);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      font-size: 12px; font-weight: 700; color: #d5dae3;
+      transition: border-color .2s, background .2s;
     }
-    .roster-title { font-size: 13px; color: #9296BE; margin-bottom: 10px; }
-    #roster { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-    #roster li { display: flex; align-items: center; gap: 10px; }
-    #roster .you { font-size: 12px; color: #9296BE; margin-left: auto; }
+    .pill:hover { border-color: #596578; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #6c7686; flex: none; }
+    .dot.live { background: var(--green); box-shadow: 0 0 0 0 rgba(37,211,102,.55); animation: pulse 1.8s infinite; }
+    .dot.down { background: var(--red); }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(37,211,102,.5); }
+      70% { box-shadow: 0 0 0 7px rgba(37,211,102,0); }
+      100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
+    }
+    .roster-pop {
+      display: none;
+      position: absolute; top: calc(100% + 8px); right: 0;
+      width: 220px; max-height: 260px; overflow-y: auto;
+      padding: 10px;
+      border: 1px solid #354151;
+      border-radius: 10px;
+      background: linear-gradient(155deg, #19202c, #111721);
+      box-shadow: 0 18px 40px rgba(0,0,0,.5);
+    }
+    .roster-pop.open { display: block; }
+    .roster-pop h3 { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--muted); margin: 2px 4px 8px; }
+    .roster-pop ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .roster-pop li { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; min-width: 0; }
+    .roster-pop li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .roster-pop li .you { margin-left: auto; font-size: 10px; font-weight: 800; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 4px; }
+    .reconnect {
+      display: none;
+      margin-top: 8px; width: 100%;
+      padding: 8px; border-radius: 6px;
+      background: var(--accent); color: #fff; font-weight: 800; font-size: 12px;
+    }
+    .reconnect.show { display: block; }
+
+    /* avatars: round like the channel logos */
     .avatar {
       flex: none;
-      width: 32px; height: 32px;
-      border-radius: 50%;
       display: grid; place-items: center;
-      font-family: var(--display);
-      font-weight: 700;
-      font-size: 14px;
-      color: #fff;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--ring, rgba(130,173,218,.32));
+      background: radial-gradient(circle at 30% 20%, #273b54, #0d1421 78%);
+      color: #e8f1ff;
+      font-size: 13px; font-weight: 800;
+      box-shadow: inset 0 1px 4px rgba(255,255,255,.07);
     }
-
-    .stage {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      min-height: 0;
-      position: relative;
-    }
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 24px;
-      background: var(--paper);
-      border-bottom: 1px solid var(--line);
-    }
-    .topbar h2 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
-    .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); font-weight: 500; }
-    .dot { width: 9px; height: 9px; border-radius: 50%; background: #B3B7D4; }
-    .dot.live { background: var(--ok); }
-    .dot.down { background: var(--coral); }
-    #reconnect {
-      display: none;
-      background: var(--coral);
-      color: #fff;
-      font-weight: 600;
-      font-size: 13px;
-      border-radius: 8px;
-      padding: 5px 12px;
-    }
+    .avatar.sm { width: 28px; height: 28px; font-size: 11px; border-width: 1.5px; }
 
     #messages {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      padding: 22px 24px;
+      padding: 54px 14px 10px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: #2a3240 transparent;
     }
-    .row { display: flex; gap: 10px; max-width: min(620px, 86%); }
+    .row { display: flex; gap: 9px; max-width: min(560px, 88%); }
     .row.mine { align-self: flex-end; flex-direction: row-reverse; }
     .col { min-width: 0; }
-    .meta { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 4px; }
-    .meta b { color: var(--ink); font-weight: 600; margin-right: 6px; }
-    .row.mine .meta { text-align: right; }
+    .meta { font-size: 11.5px; color: var(--muted); margin-bottom: 3px; display: flex; gap: 8px; align-items: baseline; }
+    .meta b { color: #dfe3ea; font-weight: 700; font-size: 12.5px; }
+    .row.mine .meta { justify-content: flex-end; }
     .bubble {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-radius: 4px 16px 16px 16px;
-      padding: 10px 14px;
+      padding: 9px 13px;
+      border: 1px solid #252c38;
+      border-radius: 4px 14px 14px 14px;
+      background: linear-gradient(155deg, #19202c 0%, #111721 65%, #10141e 100%);
       overflow-wrap: anywhere;
       white-space: pre-wrap;
     }
     .row.mine .bubble {
-      background: var(--violet);
-      border-color: var(--violet);
+      border-color: #ff8a47;
+      border-radius: 14px 4px 14px 14px;
+      background: linear-gradient(145deg, #ff7a2e, #f0560b);
       color: #fff;
-      border-radius: 16px 4px 16px 16px;
     }
-    .bubble.has-img { padding: 6px; }
-    .bubble .cap { padding: 6px 8px 4px; }
+    .bubble.has-img { padding: 5px; }
+    .bubble .cap { padding: 6px 8px 3px; }
     .bubble img {
       display: block;
       max-width: 100%;
-      max-height: 320px;
-      border-radius: 12px;
+      max-height: 280px;
+      border-radius: 10px;
       cursor: zoom-in;
-      background: var(--mist);
+      background: #0c0f15;
     }
-    .expired { font-style: italic; color: var(--ink-soft); }
-    .row.mine .expired { color: #D9D1FF; }
-    .sys { align-self: center; font-size: 13px; color: var(--ink-soft); background: rgba(24,27,58,.06); padding: 3px 12px; border-radius: 20px; }
-    .empty { margin: auto; text-align: center; color: var(--ink-soft); max-width: 28ch; }
+    .expired { font-style: italic; color: var(--muted); }
+    .row.mine .expired { color: #ffe3d1; }
+    .sys {
+      align-self: center;
+      font-size: 11.5px; font-weight: 600; color: #8a93a3;
+      background: #151b26; border: 1px solid #202631;
+      padding: 3px 12px; border-radius: 20px;
+    }
+    .empty { margin: auto; text-align: center; color: var(--muted); font-size: 13px; max-width: 26ch; line-height: 1.6; }
+    .empty b { display: block; color: #e7e9ed; font-size: 16px; margin-bottom: 4px; }
 
-    #typing { min-height: 22px; padding: 0 24px 4px; font-size: 13px; color: var(--violet); font-weight: 500; }
+    #typing { min-height: 20px; padding: 0 16px 4px; font-size: 12px; font-weight: 600; color: var(--accent); }
 
     /* composer */
-    .composer-wrap { padding: 0 20px 18px; }
+    .composer-wrap { padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
     #preview {
-      display: none;
-      align-items: center;
-      gap: 12px;
-      background: var(--violet-tint);
-      border-radius: 14px 14px 0 0;
-      padding: 10px 12px;
+      display: none; align-items: center; gap: 11px;
+      padding: 9px 11px;
+      border: 1px solid #2f3846; border-bottom: 0;
+      border-radius: 10px 10px 0 0;
+      background: #151b26;
     }
-    #preview img { width: 54px; height: 54px; object-fit: cover; border-radius: 8px; }
-    #preview .pinfo { flex: 1; min-width: 0; font-size: 13px; }
-    #preview .pinfo b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #preview .pinfo span { color: var(--ink-soft); }
-    #removeImg { font-weight: 600; font-size: 13px; color: #C4301C; padding: 6px 10px; border-radius: 8px; }
-    #removeImg:hover { background: rgba(196,48,28,.1); }
+    #preview img { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; }
+    #preview .pinfo { flex: 1; min-width: 0; font-size: 12px; }
+    #preview .pinfo b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+    #preview .pinfo span { color: var(--muted); }
+    #removeImg { font-size: 12px; font-weight: 800; color: #ff7a85; padding: 6px 9px; border-radius: 6px; }
+    #removeImg:hover { background: rgba(243,75,87,.12); }
 
     form#composer {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--paper);
-      border: 2px solid var(--line);
-      border-radius: 16px;
-      padding: 6px;
-      transition: border-color .15s;
-    }
-    form#composer:focus-within { border-color: var(--violet); }
-    .has-preview form#composer { border-radius: 0 0 16px 16px; }
-    #imageBtn {
-      flex: none;
-      width: 42px; height: 42px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px;
+      border: 1px solid #2f3846;
       border-radius: 12px;
-      display: grid; place-items: center;
-      color: var(--violet);
-      transition: background .15s;
+      background: var(--bg-deep);
+      transition: border-color .2s, box-shadow .2s;
     }
-    #imageBtn:hover { background: var(--violet-tint); }
+    form#composer:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,100,18,.12); }
+    .has-preview form#composer { border-radius: 0 0 12px 12px; }
+    #imageBtn {
+      flex: none; width: 40px; height: 40px;
+      display: grid; place-items: center;
+      border-radius: 9px;
+      color: #aab2c0;
+      transition: color .2s, background .2s;
+    }
+    #imageBtn:hover { color: var(--accent); background: var(--accent-soft); }
     #text {
-      flex: 1;
-      min-width: 0;
-      border: 0;
-      outline: none;
-      background: transparent;
+      flex: 1; min-width: 0;
+      border: 0; outline: none; background: transparent;
       padding: 10px 6px;
     }
+    #text::placeholder { color: #6c7686; }
     #sendBtn {
-      flex: none;
-      background: var(--violet);
-      color: #fff;
-      font-weight: 600;
-      border-radius: 12px;
-      padding: 0 20px;
-      height: 42px;
+      flex: none; height: 40px; padding: 0 18px;
+      border-radius: 9px;
+      background: var(--accent); color: #fff;
+      font-weight: 800; font-size: 13px;
+      transition: background .2s, transform .15s;
     }
-    #sendBtn:hover { background: var(--violet-deep); }
+    #sendBtn:hover { background: var(--accent-hi); }
+    #sendBtn:active { transform: scale(.97); }
 
     /* drag overlay */
     #drop {
-      display: none;
-      position: absolute; inset: 0;
-      background: rgba(91,61,245,.92);
-      color: #fff;
-      z-index: 20;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--display);
-      font-size: 30px;
-      font-weight: 700;
-      text-align: center;
+      display: none; position: absolute; inset: 0; z-index: 30;
+      align-items: center; justify-content: center; text-align: center;
       padding: 20px;
+      background: rgba(255,100,18,.92);
+      color: #fff; font-size: 22px; font-weight: 800; line-height: 1.3;
     }
     #chat.dragging #drop { display: flex; }
 
     /* toast */
     #toast {
-      position: fixed;
-      left: 50%; bottom: 96px;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--ink);
-      color: #fff;
+      position: fixed; left: 50%; bottom: 84px;
+      transform: translateX(-50%) translateY(16px);
+      max-width: 90%;
       padding: 10px 16px;
-      border-radius: 12px;
-      font-weight: 500;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .2s, transform .2s;
-      z-index: 40;
-      max-width: 90vw;
+      border: 1px solid #3a4756; border-radius: 8px;
+      background: #202b37; color: #fff;
+      font-size: 13px; font-weight: 600;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .25s var(--out);
+      z-index: 60;
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* lightbox */
     #lightbox {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(24,27,58,.92);
-      z-index: 50;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+      display: none; position: fixed; inset: 0; z-index: 70;
+      align-items: center; justify-content: center;
+      padding: 16px;
+      background: rgba(1,3,8,.9);
       cursor: zoom-out;
     }
     #lightbox.open { display: flex; }
-    #lightbox img { max-width: 100%; max-height: 100%; border-radius: 12px; }
+    #lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
 
-    ::-webkit-scrollbar { width: 10px; }
-    ::-webkit-scrollbar-thumb { background: #C7CAE6; border-radius: 10px; border: 2px solid var(--mist); }
+    ::-webkit-scrollbar { width: 7px; }
+    ::-webkit-scrollbar-thumb { background: #2a3240; border-radius: 8px; }
 
-    /* ───────── mobile ───────── */
-    @media (max-width: 760px) {
-      #login { grid-template-columns: 1fr; grid-template-rows: 200px 1fr; }
-      .login-art { padding: 24px; }
-      .login-art p { display: none; }
-      .login-art .word { font-size: 150px; }
-      .login-art .blob { width: 200px; height: 200px; right: -60px; top: -60px; }
-      #chat { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-      aside { flex-direction: row; align-items: center; padding: 10px 14px; gap: 14px; overflow-x: auto; overflow-y: hidden; }
-      .brand { font-size: 22px; }
-      .room-tag { padding: 4px 10px; font-size: 13px; }
-      .roster-title { display: none; }
-      #roster { flex-direction: row; gap: 12px; }
-      #roster li span.nm { display: none; }
-      #roster .you { display: none; }
-      .topbar { padding: 12px 16px; }
-      #messages { padding: 16px; }
+    @media (max-width: 520px) {
+      #messages { padding: 52px 10px 8px; }
       .row { max-width: 94%; }
-      .composer-wrap { padding: 0 12px 12px; }
+      .composer-wrap { padding-left: 8px; padding-right: 8px; }
+      #sendBtn { padding: 0 14px; }
     }
     @media (prefers-reduced-motion: reduce) {
-      * { transition: none !important; }
+      * { transition: none !important; animation: none !important; }
     }
   </style>
 </head>
 <body>
 
-<!-- ───────── LOGIN ───────── -->
+<!-- LOGIN -->
 <main id="login">
-  <section class="login-art" aria-hidden="true">
-    <div class="blob"></div>
-    <p>One room. Everyone sees the same conversation, photos included.</p>
-    <div class="word">Wire</div>
-  </section>
-  <section class="login-form">
-    <form id="loginForm" novalidate>
-      <h1>Choose a username</h1>
-      <p class="sub">Others will see this name next to your messages. You'll join the #general room.</p>
+  <form class="login-card" id="loginForm" novalidate>
+    <div class="live-badge"><i aria-hidden="true"></i>MATCHDEKHO LIVE CHAT</div>
+    <h1>Join the match chat</h1>
+    <p class="sub">Pick a username. Everyone watching sees the same conversation, and you can share images too.</p>
 
+    <div class="field">
       <label for="nameInput">Username</label>
       <input id="nameInput" maxlength="24" autocomplete="nickname" placeholder="Type your own name" />
-      <div class="field-error" id="nameError" role="alert"></div>
+    </div>
+    <div class="field-error" id="nameError" role="alert"></div>
 
-      <button class="btn-primary" type="submit">Join chat</button>
-      <p class="note">Messages and images are not stored permanently. Images up to 2 MB are supported.</p>
-    </form>
-  </section>
+    <button class="btn-join" type="submit">Join chat</button>
+    <p class="login-note">Messages are not saved. Images up to 2 MB.</p>
+  </form>
 </main>
 
-<!-- ───────── CHAT ───────── -->
-<div id="chat">
-  <aside>
-    <div class="brand">Wire</div>
-    <div class="room-tag"># general</div>
-    <div>
-      <div class="roster-title" id="rosterTitle">Online</div>
+<!-- CHAT -->
+<section id="chat">
+  <div class="pill-wrap">
+    <button class="pill" id="pillBtn" type="button" aria-expanded="false" aria-controls="rosterPop">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Connecting</span>
+    </button>
+    <div class="roster-pop" id="rosterPop">
+      <h3 id="rosterTitle">ONLINE</h3>
       <ul id="roster"></ul>
+      <button class="reconnect" id="reconnect" type="button">Reconnect</button>
     </div>
-  </aside>
-
-  <div class="stage" id="stage">
-    <div class="topbar">
-      <h2 id="roomLabel">general</h2>
-      <div class="status">
-        <button id="reconnect" type="button">Reconnect</button>
-        <span class="dot" id="statusDot"></span>
-        <span id="statusText">Connecting</span>
-      </div>
-    </div>
-
-    <div id="messages" aria-live="polite"></div>
-    <div id="typing"></div>
-
-    <div class="composer-wrap" id="composerWrap">
-      <div id="preview">
-        <img id="previewImg" alt="Selected image preview" />
-        <div class="pinfo"><b id="previewName"></b><span id="previewSize"></span></div>
-        <button type="button" id="removeImg">Remove</button>
-      </div>
-      <form id="composer" autocomplete="off">
-        <input type="file" id="imageInput" accept="image/png,image/jpeg,image/gif,image/webp" hidden />
-        <button type="button" id="imageBtn" title="Send an image" aria-label="Attach an image">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
-            <circle cx="8.5" cy="8.5" r="1.6"></circle>
-            <path d="M21 15l-5-5L5 21"></path>
-          </svg>
-        </button>
-        <input id="text" placeholder="Write a message" maxlength="2000" />
-        <button id="sendBtn" type="submit">Send</button>
-      </form>
-    </div>
-
-    <div id="drop">Drop an image to send it<br>(max 2 MB)</div>
   </div>
-</div>
+
+  <div id="messages" aria-live="polite"></div>
+  <div id="typing"></div>
+
+  <div class="composer-wrap" id="composerWrap">
+    <div id="preview">
+      <img id="previewImg" alt="Selected image preview" />
+      <div class="pinfo"><b id="previewName"></b><span id="previewSize"></span></div>
+      <button type="button" id="removeImg">Remove</button>
+    </div>
+    <form id="composer" autocomplete="off">
+      <input type="file" id="imageInput" accept="image/png,image/jpeg,image/gif,image/webp" hidden />
+      <button type="button" id="imageBtn" title="Send an image" aria-label="Attach an image">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+          <circle cx="8.5" cy="8.5" r="1.6"></circle>
+          <path d="M21 15l-5-5L5 21"></path>
+        </svg>
+      </button>
+      <input id="text" placeholder="Say something about the match" maxlength="2000" />
+      <button id="sendBtn" type="submit">Send</button>
+    </form>
+  </div>
+
+  <div id="drop">Drop an image to send it<br><small style="font-weight:600;font-size:14px">PNG, JPEG, GIF or WebP · max 2 MB</small></div>
+</section>
 
 <div id="toast" role="status"></div>
 <div id="lightbox"><img alt="Full size image" /></div>
@@ -450,18 +415,18 @@
 <script>
 (() => {
   const ROOM = 'general';
-  const STORAGE_KEY = 'wire_username';
+  const STORAGE_KEY = 'matchdekho_chat_username';
   const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
   const ALLOWED = /^image\/(png|jpeg|gif|webp)$/;
-  const AVATAR_COLORS = ['#5B3DF5', '#FF6B57', '#1FA67A', '#E0A100', '#0F8FD6', '#C13E8F'];
+  const RINGS = ['#ff8c4a', '#28d369', '#5aa9ff', '#e56bb0', '#f0b429', '#8f8bff'];
 
   const $ = (id) => document.getElementById(id);
   const loginEl = $('login'), chatEl = $('chat');
   const loginForm = $('loginForm'), nameInput = $('nameInput'), nameError = $('nameError');
-  const roster = $('roster'), roomLabel = $('roomLabel');
+  const pillBtn = $('pillBtn'), rosterPop = $('rosterPop'), roster = $('roster'), rosterTitle = $('rosterTitle');
   const statusDot = $('statusDot'), statusText = $('statusText'), reconnectBtn = $('reconnect');
   const messagesEl = $('messages'), typingEl = $('typing');
-  const composer = $('composer'), textInput = $('text'), sendBtn = $('sendBtn');
+  const composer = $('composer'), textInput = $('text');
   const imageBtn = $('imageBtn'), imageInput = $('imageInput');
   const preview = $('preview'), previewImg = $('previewImg');
   const previewName = $('previewName'), previewSize = $('previewSize'), removeImg = $('removeImg');
@@ -472,28 +437,24 @@
   let ws = null;
   let myName = '';
   let requestedName = '';
-  let pendingImage = null;      // { dataUrl, name, size }
-  let typingSendTimer = null;
-  let typingClearTimer = null;
-  let toastTimer = null;
+  let onlineCount = 0;
+  let pendingImage = null;
+  let typingSendTimer = null, typingClearTimer = null, toastTimer = null;
 
-  // The server escapes < and > as HTML entities. We render with textContent,
-  // so turn them back into the characters the sender actually typed.
+  // Server escapes < and > as entities; we render with textContent, so restore them.
   const decode = (s) => String(s == null ? '' : s).replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
-  const colorFor = (name) => {
+  const ringFor = (name) => {
     let h = 0;
     for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+    return RINGS[h % RINGS.length];
   };
 
-  const initial = (name) => (decode(name).trim()[0] || '?').toUpperCase();
-
-  function makeAvatar(name) {
+  function makeAvatar(name, small) {
     const a = document.createElement('div');
-    a.className = 'avatar';
-    a.style.background = colorFor(name);
-    a.textContent = initial(name);
+    a.className = 'avatar' + (small ? ' sm' : '');
+    a.style.setProperty('--ring', ringFor(name));
+    a.textContent = (decode(name).trim()[0] || '?').toUpperCase();
     return a;
   }
 
@@ -504,15 +465,13 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3200);
   }
 
-  function formatSize(bytes) {
-    return bytes < 1024 * 1024
-      ? Math.max(1, Math.round(bytes / 1024)) + ' KB'
-      : (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-  }
+  const formatSize = (b) => b < 1048576
+    ? Math.max(1, Math.round(b / 1024)) + ' KB'
+    : (b / 1048576).toFixed(2) + ' MB';
 
-  // ───────── login ─────────
-  // Prefill only a name this person chose earlier. There is no default name.
-  const saved = localStorage.getItem(STORAGE_KEY);
+  // ───────── login (username is always chosen by the person) ─────────
+  let saved = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch {}
   if (saved) nameInput.value = saved;
   nameInput.focus();
 
@@ -530,10 +489,10 @@
       nameInput.focus();
       return;
     }
-    localStorage.setItem(STORAGE_KEY, name);
+    try { localStorage.setItem(STORAGE_KEY, name); } catch {}
     requestedName = name;
     loginEl.style.display = 'none';
-    chatEl.style.display = 'grid';
+    chatEl.classList.add('on');
     connect(name);
     textInput.focus();
   });
@@ -541,14 +500,15 @@
   // ───────── connection ─────────
   function setStatus(state) {
     statusDot.className = 'dot' + (state === 'live' ? ' live' : state === 'down' ? ' down' : '');
-    statusText.textContent = state === 'live' ? 'Live' : state === 'down' ? 'Disconnected' : 'Connecting';
-    reconnectBtn.style.display = state === 'down' ? 'inline-block' : 'none';
+    if (state === 'live') statusText.textContent = 'Live · ' + onlineCount + ' online';
+    else statusText.textContent = state === 'down' ? 'Disconnected' : 'Connecting';
+    reconnectBtn.classList.toggle('show', state === 'down');
+    if (state === 'down') rosterPop.classList.add('open');
   }
 
   function connect(name) {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${proto}://${location.host}/ws?room=${encodeURIComponent(ROOM)}&name=${encodeURIComponent(name)}`;
-    ws = new WebSocket(url);
+    ws = new WebSocket(`${proto}://${location.host}/ws?room=${encodeURIComponent(ROOM)}&name=${encodeURIComponent(name)}`);
     setStatus('connecting');
 
     ws.addEventListener('open', () => setStatus('live'));
@@ -562,7 +522,6 @@
       switch (data.type) {
         case 'welcome':
           myName = data.name;
-          roomLabel.textContent = decode(data.room);
           messagesEl.textContent = '';
           if (!data.history.length) showEmpty();
           data.history.forEach(addMessage);
@@ -594,12 +553,25 @@
 
   reconnectBtn.addEventListener('click', () => connect(requestedName));
 
-  // ───────── rendering ─────────
+  // ───────── status pill / online list ─────────
+  pillBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = rosterPop.classList.toggle('open');
+    pillBtn.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', (e) => {
+    if (!rosterPop.contains(e.target) && statusText.textContent !== 'Disconnected') {
+      rosterPop.classList.remove('open');
+      pillBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
   function renderRoster(users) {
+    onlineCount = users.length;
     roster.textContent = '';
     users.forEach((u) => {
       const li = document.createElement('li');
-      li.appendChild(makeAvatar(u));
+      li.appendChild(makeAvatar(u, true));
       const nm = document.createElement('span');
       nm.className = 'nm';
       nm.textContent = decode(u);
@@ -607,20 +579,23 @@
       if (u === myName) {
         const you = document.createElement('span');
         you.className = 'you';
-        you.textContent = 'you';
+        you.textContent = 'YOU';
         li.appendChild(you);
       }
-      li.title = decode(u);
       roster.appendChild(li);
     });
-    $('rosterTitle').textContent = 'Online (' + users.length + ')';
+    rosterTitle.textContent = 'ONLINE (' + users.length + ')';
+    if (ws && ws.readyState === WebSocket.OPEN) statusText.textContent = 'Live · ' + onlineCount + ' online';
   }
 
+  // ───────── messages ─────────
   function showEmpty() {
     const el = document.createElement('div');
     el.className = 'empty';
     el.id = 'emptyState';
-    el.textContent = 'No messages yet. Say hello or share an image.';
+    const b = document.createElement('b');
+    b.textContent = 'No messages yet';
+    el.append(b, document.createTextNode('Start the talk or share a match photo.'));
     messagesEl.appendChild(el);
   }
   function clearEmpty() {
@@ -628,11 +603,18 @@
     if (el) el.remove();
   }
 
+  function addCaption(parent, text, cls) {
+    const cap = document.createElement('div');
+    cap.className = 'cap' + (cls ? ' ' + cls : '');
+    cap.textContent = text;
+    parent.appendChild(cap);
+  }
+
   function addMessage(m) {
     const mine = m.name === myName;
     const row = document.createElement('div');
     row.className = 'row' + (mine ? ' mine' : '');
-    row.appendChild(makeAvatar(m.name));
+    row.appendChild(makeAvatar(m.name, false));
 
     const col = document.createElement('div');
     col.className = 'col';
@@ -654,26 +636,14 @@
       img.src = m.image;
       img.alt = 'Image from ' + decode(m.name);
       img.loading = 'lazy';
-      img.addEventListener('click', () => openLightbox(m.image));
+      img.addEventListener('click', () => { lightboxImg.src = m.image; lightbox.classList.add('open'); });
+      img.addEventListener('load', scrollDown);
       bubble.appendChild(img);
-      if (m.text) {
-        const cap = document.createElement('div');
-        cap.className = 'cap';
-        cap.textContent = decode(m.text);
-        bubble.appendChild(cap);
-      }
+      if (m.text) addCaption(bubble, decode(m.text));
     } else if (m.imageExpired) {
       bubble.classList.add('has-img');
-      const note = document.createElement('div');
-      note.className = 'cap expired';
-      note.textContent = 'This image is no longer available.';
-      bubble.appendChild(note);
-      if (m.text) {
-        const cap = document.createElement('div');
-        cap.className = 'cap';
-        cap.textContent = decode(m.text);
-        bubble.appendChild(cap);
-      }
+      addCaption(bubble, 'This image is no longer available.', 'expired');
+      if (m.text) addCaption(bubble, decode(m.text));
     } else {
       bubble.textContent = decode(m.text);
     }
@@ -692,31 +662,18 @@
     scrollDown();
   }
 
-  function scrollDown() {
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
+  function scrollDown() { messagesEl.scrollTop = messagesEl.scrollHeight; }
 
-  // ───────── lightbox ─────────
-  function openLightbox(src) {
-    lightboxImg.src = src;
-    lightbox.classList.add('open');
-  }
+  // lightbox
   lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') lightbox.classList.remove('open');
-  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') lightbox.classList.remove('open'); });
 
   // ───────── image selection ─────────
   function stageImage(file) {
     if (!file) return;
-    if (!ALLOWED.test(file.type)) {
-      toast('Only PNG, JPEG, GIF or WebP images can be sent.');
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      toast('That image is ' + formatSize(file.size) + '. Choose one under 2 MB.');
-      return;
-    }
+    if (!ALLOWED.test(file.type)) { toast('Only PNG, JPEG, GIF or WebP images can be sent.'); return; }
+    if (file.size > MAX_IMAGE_BYTES) { toast('That image is ' + formatSize(file.size) + '. Choose one under 2 MB.'); return; }
+
     const reader = new FileReader();
     reader.onload = () => {
       pendingImage = { dataUrl: reader.result, name: file.name || 'Pasted image', size: file.size };
@@ -737,7 +694,7 @@
     preview.style.display = 'none';
     previewImg.removeAttribute('src');
     composerWrap.classList.remove('has-preview');
-    textInput.placeholder = 'Write a message';
+    textInput.placeholder = 'Say something about the match';
   }
 
   imageBtn.addEventListener('click', () => imageInput.click());
@@ -748,7 +705,6 @@
   });
   removeImg.addEventListener('click', clearImage);
 
-  // paste an image from the clipboard
   textInput.addEventListener('paste', (e) => {
     const files = e.clipboardData && e.clipboardData.files;
     if (files && files.length && files[0].type.startsWith('image/')) {
@@ -757,20 +713,11 @@
     }
   });
 
-  // drag and drop onto the chat
   let dragDepth = 0;
   const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
-  chatEl.addEventListener('dragenter', (e) => {
-    if (!hasFiles(e)) return;
-    e.preventDefault();
-    dragDepth++;
-    chatEl.classList.add('dragging');
-  });
+  chatEl.addEventListener('dragenter', (e) => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; chatEl.classList.add('dragging'); });
   chatEl.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
-  chatEl.addEventListener('dragleave', () => {
-    dragDepth = Math.max(0, dragDepth - 1);
-    if (!dragDepth) chatEl.classList.remove('dragging');
-  });
+  chatEl.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) chatEl.classList.remove('dragging'); });
   chatEl.addEventListener('drop', (e) => {
     if (!hasFiles(e)) return;
     e.preventDefault();
@@ -782,10 +729,7 @@
   // ───────── sending ─────────
   composer.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      toast('You are disconnected. Press Reconnect to continue.');
-      return;
-    }
+    if (!ws || ws.readyState !== WebSocket.OPEN) { toast('You are disconnected. Tap the status pill to reconnect.'); return; }
     const text = textInput.value.trim();
 
     if (pendingImage) {
@@ -799,7 +743,6 @@
     textInput.value = '';
   });
 
-  // typing indicator
   textInput.addEventListener('input', () => {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     clearTimeout(typingSendTimer);
