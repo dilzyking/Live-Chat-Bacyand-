@@ -335,6 +335,18 @@
     #lightbox.open { display: flex; }
     #lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
 
+    /* blocked screen (same look as the server's 403 page) */
+    #blocked {
+      position: fixed; inset: 0; z-index: 80;
+      display: grid; place-items: center;
+      padding: 16px;
+      background: var(--bg);
+      text-align: center;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
     ::-webkit-scrollbar { width: 7px; }
     ::-webkit-scrollbar-thumb { background: #2a3240; border-radius: 8px; }
 
@@ -411,6 +423,7 @@
 
 <div id="toast" role="status"></div>
 <div id="lightbox"><img alt="Full size image" /></div>
+<div id="blocked" role="alert" hidden><p id="blockedText"></p></div>
 
 <script>
 (() => {
@@ -419,6 +432,8 @@
   const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
   const ALLOWED = /^image\/(png|jpeg|gif|webp)$/;
   const RINGS = ['#ff8c4a', '#28d369', '#5aa9ff', '#e56bb0', '#f0b429', '#8f8bff'];
+  const BLOCK_CLOSE_CODE = 4003;                          // server closes blocked sockets with this code
+  const BLOCK_TEXT = 'You Exceed You Limit Bye Bye 👋';  // fallback if the server text is missing
 
   const $ = (id) => document.getElementById(id);
   const loginEl = $('login'), chatEl = $('chat');
@@ -433,12 +448,14 @@
   const composerWrap = $('composerWrap');
   const toastEl = $('toast');
   const lightbox = $('lightbox'), lightboxImg = lightbox.querySelector('img');
+  const blockedEl = $('blocked'), blockedText = $('blockedText');
 
   let ws = null;
   let myName = '';
   let requestedName = '';
   let onlineCount = 0;
   let pendingImage = null;
+  let blocked = false;
   let typingSendTimer = null, typingClearTimer = null, toastTimer = null;
 
   // Server escapes < and > as entities; we render with textContent, so restore them.
@@ -458,16 +475,27 @@
     return a;
   }
 
-  function toast(msg) {
+  function toast(msg, ms = 3200) {
     toastEl.textContent = msg;
     toastEl.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3200);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
   }
 
   const formatSize = (b) => b < 1048576
     ? Math.max(1, Math.round(b / 1024)) + ' KB'
     : (b / 1048576).toFixed(2) + ' MB';
+
+  // ───────── blocked (abuse limit exceeded) ─────────
+  function showBlocked(text) {
+    blocked = true;
+    try { if (ws) ws.close(); } catch {}
+    blockedText.textContent = text || BLOCK_TEXT;
+    blockedEl.hidden = false;
+    chatEl.classList.remove('on');
+    loginEl.style.display = 'none';
+    toastEl.classList.remove('show');
+  }
 
   // ───────── login (username is always chosen by the person) ─────────
   let saved = null;
@@ -507,13 +535,17 @@
   }
 
   function connect(name) {
+    if (blocked) return;
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     ws = new WebSocket(`${proto}://${location.host}/ws?room=${encodeURIComponent(ROOM)}&name=${encodeURIComponent(name)}`);
     setStatus('connecting');
 
-    ws.addEventListener('open', () => setStatus('live'));
-    ws.addEventListener('close', () => setStatus('down'));
-    ws.addEventListener('error', () => setStatus('down'));
+    ws.addEventListener('open', () => { if (!blocked) setStatus('live'); });
+    ws.addEventListener('close', (e) => {
+      if (e.code === BLOCK_CLOSE_CODE) showBlocked();   // never fall back to "Reconnect" once blocked
+      else if (!blocked) setStatus('down');
+    });
+    ws.addEventListener('error', () => { if (!blocked) setStatus('down'); });
 
     ws.addEventListener('message', (evt) => {
       let data;
@@ -545,7 +577,9 @@
           }
           break;
         case 'error':
-          toast(data.text || 'Something went wrong.');
+          if (data.code === 'blocked' || data.blocked) { showBlocked(data.text); break; }
+          // abuse warnings are longer, so keep them on screen a bit more
+          toast(data.text || 'Something went wrong.', data.code === 'abuse_warning' ? 6000 : 3200);
           break;
       }
     });
